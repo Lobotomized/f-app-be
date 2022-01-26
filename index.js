@@ -1,21 +1,120 @@
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app)
-const io = require('socket.io')(server, { origins: '*:*', wsEngine: 'ws' });
-const fs = require('fs');
 const status = require('http-status');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const salt = bcrypt.genSaltSync(10);
-
 const mongoose = require('mongoose');
+const cors = require('cors');
+const User = require('./models/User').User
+const Room = require('./models/Room').Room
 
-const Schema = mongoose.Schema;
-const { check, validationResult } = require('express-validator');
+const Story = require('./models/Story').Story
+const Message = require('./models/Message').Message
 
-mongoose.Promise = global.Promise;
 
+
+
+
+
+
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:5000",
+  },
+});
+
+// io.use((socket, next) => {
+//   const username = socket.handshake.auth?.username;
+//   if (!username) {
+//     return next(new Error("invalid username"));
+//   }
+//   socket.username = username;
+//   next();
+// });
+
+
+
+io.on("connection", (socket) => {
+  //Join all rooms that the user has
+  User.findOne({ _id: mongoose.Types.ObjectId(socket.handshake.auth.userId) }, (err, user) => {
+    if (!user) {
+      return;
+    }
+    const rooms = [...user.authorRooms, ...user.responderRooms];
+    rooms.forEach((room) => {
+      socket.join(String(room));
+    })
+  })
+
+  socket.on("joinFromPost", (postId) => {
+    console.log('vliza tuk ' , postId)
+    socket.join(postId);
+  })
+
+  socket.on("createRoomFromPost", (postId) => {
+    socket.join(postId);
+
+    Story.findOne({ _id: postId }, (err, story) => {
+      if (!story) {
+        return;
+      }
+      User.findOne({ _id: mongoose.Types.ObjectId(socket.handshake.auth.userId) }, (err, conversationStarter) => {
+        if (!conversationStarter) {
+          return;
+        }
+        User.findOne({ _id: story.user }, (err, responder) => {
+          Room.findOne({ fromPost: postId, author: conversationStarter }, async (err, oldRoom) => {
+            if (!oldRoom) {
+              const newRoom = new Room({
+                roomType: "fromPost",
+                fromPost: postId,
+                author: mongoose.Types.ObjectId(conversationStarter._id),
+                responder: story.user,
+                name: story.content.split(' ').slice(0, 3).join(' ')
+              })
+              conversationStarter.authorRooms.push(newRoom._id);
+              responder.responderRooms.push(newRoom._id);
+              conversationStarter.save();
+              responder.save();
+
+              await newRoom.save();
+              
+            }
+          })
+        })
+      })
+    })
+  })
+
+  socket.on("message", async (receivable) => {
+    socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId });
+
+    if (receivable.message) {
+      const message = new Message({
+        author: socket.handshake.auth.userId,
+        content: receivable.message,
+        room: mongoose.Types.ObjectId(receivable.roomId)
+      });
+      message.save();
+
+    }
+
+
+    const room = await Room.findOne({ _id: receivable.roomId });
+    if (socket.handshake.auth.userId === String(room.responder)) {
+      room.seenByAuthor = false;
+    }
+    else if (socket.handshake.auth.userId === String(room.author)) {
+      room.seenByResponder = false;
+    }
+    room.save();
+  })
+})
+
+
+io.on("connect_error", (err) => {
+  console.log(`connect_error due to ${err.message}`);
+});
 
 const uri = 'mongodb+srv://Lobotomy:Micasmu4ka@cluster0.tippd.mongodb.net/FappApp' +
   '?retryWrites=true&w=majority';
@@ -23,229 +122,34 @@ const uri = 'mongodb+srv://Lobotomy:Micasmu4ka@cluster0.tippd.mongodb.net/FappAp
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useUnifiedTopology:true,
-  useCreateIndex:true,
-  useFindAndModify:true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
+  useFindAndModify: true,
   serverSelectionTimeoutMS: 5000
 }).catch(err => console.log(err, '  greshka'));
 
+const corsOptions = {
+  origin: 'http://localhost:5000/#/login',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
 
+
+
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-const Client = server.listen(3005)
-io.origins('*:*')
+require('./routes/test.js')(app)
+require('./routes/auth.js')(app)
 
+server.listen(3005)
 
-//Models
-
-const userSchema = new mongoose.Schema({  
-  email: {type:String, unique: true, required:true},
-  username: {type:String, unique: true, required:true},
-  password:{type:String, required:true}
-});
-
-let User = mongoose.model('User', userSchema);  
-
-
-var msgSchema = new Schema({
-
-  content: {
-    type: String,
-    required: true
-  },
-  senderName: {
-    type: String,
-    required: true
-  },
-  senderId: {
-    type: String,
-    required: true
-  },
-  room: {
-    type: String,
-    required: true
-  },
-  sendDate: {
-    type: Date,
-    required: true,
-    default: Date.now()
-  }
-
-})
-
-var roomSchema = new Schema({
-  namespace: {
-    type: String,
-    required: true
-  },
-  name: {
-    type: String,
-    default: "name"
-  }
-})
-
-const Message = mongoose.model('Message', msgSchema);
-
-const Room = mongoose.model('Room', roomSchema)
-
-
-
-
-
-
-
-
-var test = io.of('/chat')
-
-
-app.get('/static', function (req, res, next) {
-  res.sendFile(__dirname + '/index.html')
-})
-
-app.get('/test', function (req, res, next) {
-  res.sendFile(__dirname + '/bootchat.html')
-})
-
-
-app.get('/styles', function (req, res, next) {
-  res.sendFile(__dirname + '/bootchat.css')
-})
-
-app.post('/register', [check('username').isLength({min:5}),check('password').isLength({min:6}),
-check('email').isEmail()], function(req,res) {
-
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-        return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: errors.array() })
-    }
-    const user = new User();
-    console.log(req.body,  '  body')
-    user.email = req.body.email;
-    user.username = req.body.username;
-
-    var hash = bcrypt.hashSync(req.body.password, salt);
-    user.password = hash;
-
-    user.save((err,user) => {
-        if(err){
-            return res.status(status.UNPROCESSABLE_ENTITY).json({errors:err})
-        }
-        
-        return res.status(status.OK).json({user})
-    })
-    
-})
-
-
-app.post('/login',  [check('password').isLength({min:6})], function(req,res){
-  const errors = validationResult(req)
-  if (!errors.isEmpty()) {
-      return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: errors.array() })
-  }
-
-  const username = req.body.username || req.body.email;
-  const password = req.body.password;
-
-  if(!username || !password){
-      return res.status(status.UNPROCESSABLE_ENTITY).json({message:"Wrong Username or Password"})
-  }
-
-  
-
-  User.findOne({$or:[{username:username}, {email:username}]}, (err, user) => {
-      if(err){
-          return res.status(status.UNPROCESSABLE_ENTITY).json({err:err})
-      }
-      else if (!user){
-          return res.status(status.UNPROCESSABLE_ENTITY).json({err:err});
-      }
-      else{
-          console.log(user);
-          const check = bcrypt.compareSync(password, user.password);
-          if(check){
-              jwt.sign({user},'muhatacece', (err, token) => {
-                  if(err){
-                      return res.status(status.UNPROCESSABLE_ENTITY).json({err:err});
-                  }
-                  return res.status(status.OK).json({token}) 
-              })
-          }
-          else{
-              return res.status(status.UNAUTHORIZED).jsoN({err:"Wrong Username or Password"})
-          }
-
-      }
-  })
-})
-
-// Change the 404 message modifing the middleware
-app.use(function(req, res, next) {
+// Change the 404 message modifing the middleware 
+app.use(function (req, res, next) {
   res.status(status.NOT_FOUND).send("Sorry, that route doesn't exist. Have a nice day :)");
 });
 
-test.on('connection', function (socket) {
-  fullProcess(socket)
-});
 
-
-function validateUser(req,res,next){
-  const bearerHeader = req.headers['authorization'] || "";
-  const bearerToken = bearerHeader.split(' ')[1];
-  if(typeof bearerHeader !== 'undefined'){
-      req.token = bearerToken;
-
-      next();
-  }else{
-      return res.status(403).json({message:"Forbidden"})
-  }
-}
-
-function fullProcess(socket) {
-  socket.on('joinroom', function (data) {
-    console.log('vliza v joinRoom')
-    Object.keys(socket.rooms).forEach(function (key) {
-      socket.leave(key);
-      // do something with obj[key]
-    });
-    Room.findOne({ namespace: data.secret, name: data.room }).exec(function (error, res) {
-      if (!res) {
-        let rm = new Room({ namespace: data.secret, name: data.room })
-        data.secret = data.secret.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        data.room = data.room.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        rm.save().catch()
-      }
-
-      socket.join(data.room)
-      socket.currentRoom = data.room;
-      console.log(data.room , '   come here')
-      if (res) {
-        // Message.find({project:data.secret,room:data.room}).sort({sendDate:-1}).limit(50).sort({sendDate:1}).exec(function(err,result){
-        //       socket.emit('history', {result})      
-        // })
-        //, {$limit:20}, {$sort:{sendDate:-1}}
-        Message.aggregate([{ $match: {  room: data.room.toString() } }, { $sort: { sendDate: -1 } }, { $limit: 20 }
-          , { $sort: { sendDate: 1 } }]).exec(function (err, result) {
-            socket.emit('history', { result })
-          })
-      }
-    })
-  })
-
-
-  //Message
-
-  socket.on('messageToServer', function (data) {
-    console.log('vliza v msg wtf', data),
-    io.of(test.name).in(socket.currentRoom).emit('messageToClient', { content: data.content, senderName: data.senderName, senderId: data.senderId })
-    data.content = data.content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    let msg = new Message({ content: data.content, senderId: data.senderId, senderName: data.senderName, project: data.secret, room: data.room, sendDate: new Date() });
-    console.log('tuka stiga')
-    msg.save((err, meseg) => {
-      console.log(err, ' err   ', meseg)
-    })
-  });
-}
 
 
 
