@@ -246,4 +246,6 @@ module.exports = function (app) {
                 })
             })
         })
-}
+
+        app.use('/static', express.static(path.join(__dirname, 'public')))
+    }
