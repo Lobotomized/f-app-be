@@ -40,11 +40,11 @@ const upload = multer({
 
 module.exports = function (app) {
 
-    app.get('/test', async function (req, res) {
+    app.get('/api/test', async function (req, res) {
         return res.status(status.OK).json({ bla: 'blabla' })
     }),
 
-        app.post('/write', validateUser, async function (req, res) {
+        app.post('/api/write', validateUser, async function (req, res) {
             const story = new Story();
             story.content = req.body.content;
             if (story.content.length > 1000) {
@@ -61,7 +61,7 @@ module.exports = function (app) {
             }
         }),
 
-        app.get('/fantasies', validateUser, async function (req, res) {
+        app.get('/api/fantasies', validateUser, async function (req, res) {
             try {
                 const stories = await Story.find({ user: { $ne: req.user._id }, hideFromUser:{$nin:[req.user._id]} }, { content: 1, user: 1 }).sort({ postedOn: -1 }).limit(5).skip(parseInt(req.query.skip) || 0)
                 return res.status(status.OK).json(stories)
@@ -72,7 +72,7 @@ module.exports = function (app) {
             }
         }),
 
-        app.get('/newMessagesCount', validateUser, async function (req, res) {
+        app.get('/api/newMessagesCount', validateUser, async function (req, res) {
             try {
                 const newMessagesCount = await Room.find({ $or: [{ author: req.user._id, seenByAuthor: false }, { responder: req.user._id, seenByResponder: false }] }).countDocuments();
                 return res.status(status.OK).json({ count: newMessagesCount });
@@ -82,7 +82,7 @@ module.exports = function (app) {
             }
         }),
 
-        app.get('/loadRooms', validateUser, async function (req, res) {
+        app.get('/api/loadRooms', validateUser, async function (req, res) {
             try {
                 const rooms = await Room.find({ $or: [{ $and: [{ author: req.user._id }, { leftByAuthor: false }] }, { $and: [{ responder: req.user._id }, { leftByResponder: false }] }] }, { name: 1, seenByAuthor: 1, seenByResponder: 1 }).sort({ postedOn: -1 })
                 return res.status(status.OK).json(rooms)
@@ -91,7 +91,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.post('/leaveRoom', validateUser, async function (req, res) {
+        app.post('/api/leaveRoom', validateUser, async function (req, res) {
             try {
                 const room = await Room.findOne({ _id: req.body.roomId })
                 const user = await User.findOne({ _id: req.user._id });
@@ -124,7 +124,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.get('/loadRoom', validateUser, async function (req, res) {
+        app.get('/api/loadRoom', validateUser, async function (req, res) {
             try {
                 const rooms = await Room.findOne({ $or: [{ $and: [{ author: req.user._id }, { leftByAuthor: false }] }, { $and: [{ responder: req.user._id }, { leftByResponder: false }] }] }, { name: 1, seenByAuthor: 1, seenByResponder: 1 }).sort({ postedOn: -1 })
                 return res.status(status.OK).json(rooms)
@@ -133,7 +133,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.get('/loadRoomByPostAndUser/:postId', validateUser, async function (req, res) {
+        app.get('/api/loadRoomByPostAndUser/:postId', validateUser, async function (req, res) {
             try {
                 const rooms = await Room.findOne({ $or: [{ author: req.user._id }, { responder: req.user._id }], fromPost: req.params.postId }, { name: 1, seenByAuthor: 1, seenByResponder: 1 }).sort({ postedOn: -1 })
                 return res.status(status.OK).json(rooms)
@@ -142,7 +142,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.get('/loadMessages/:roomId', validateUser, async function (req, res) {
+        app.get('/api/loadMessages/:roomId', validateUser, async function (req, res) {
             try {
                 const messages = await Message.find({ room: req.params.roomId }).limit(parseInt(req.query.limit) || 50).sort({ postedOn: -1 })
                 const room = await Room.findOne({ _id: req.params.roomId }).sort({ postedOn: 1 });
@@ -161,7 +161,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.get('/loadMessages', validateUser, async function (req, res) {
+        app.get('/api/loadMessages', validateUser, async function (req, res) {
             try {
                 const room = await Room.findOne({}).sort({ postedOn: 1 });
 
@@ -172,7 +172,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.post('/upload', validateUser, upload.single('upload'), async function (req, res) {
+        app.post('/api/upload', validateUser, upload.single('upload'), async function (req, res) {
             try {
                 let photo = new Photo({
                     author: req.user._id,
@@ -185,7 +185,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Нещо не е наред..." })
             }
         }),
-        app.get('/photosForUser', validateUser, async function (req, res) {
+        app.get('/api/photosForUser', validateUser, async function (req, res) {
             try {
                 const photos = await Photo.find({ author: req.user._id }).sort({ postedOn: -1 }).limit(20).skip(parseInt(req.query.skip) || 0);
 
@@ -195,7 +195,7 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ err: err.message })
             }
         }),
-        app.delete('/photo/:photoId', validateUser, async function (req, res) {
+        app.delete('/api/photo/:photoId', validateUser, async function (req, res) {
             try {
                 await Photo.deleteOne({ _id: req.params.photoId, author: req.user._id });
                 return res.status(status.OK).json({ message: "Снимката е изтрита успешно" })
@@ -208,7 +208,7 @@ module.exports = function (app) {
             }
         }),
 
-        app.post('/createRoomFromPostId', validateUser, async function (req, res) {
+        app.post('/api/createRoomFromPostId', validateUser, async function (req, res) {
             Story.findOne({ _id: req.body.postId }, async (err, story) => {
                 if (!story) {
                     return res.status(status.UNPROCESSABLE_ENTITY);
@@ -247,5 +247,4 @@ module.exports = function (app) {
             })
         })
 
-        app.use('/static', express.static(path.join(__dirname, 'public')))
     }

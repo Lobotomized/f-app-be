@@ -10,6 +10,7 @@ const Room = require('./models/Room').Room
 
 const Story = require('./models/Story').Story
 const Message = require('./models/Message').Message
+const path = require('path');
 
 
 
@@ -129,7 +130,7 @@ mongoose.connect(uri, {
 }).catch(err => console.log(err, '  greshka'));
 
 const corsOptions = {
-  origin: 'http://localhost:5000/#/login',
+  origin: 'http://localhost:8080/#/login',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
@@ -141,8 +142,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 require('./routes/test.js')(app)
 require('./routes/auth.js')(app)
+app.use('/', express.static(path.join(__dirname, 'public')))
 
-server.listen(5000)
+
+server.listen(8080)
 
 // Change the 404 message modifing the middleware 
 app.use(function (req, res, next) {

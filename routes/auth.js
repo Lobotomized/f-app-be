@@ -10,7 +10,7 @@ const User = require('../models/User.js').User
 
 
 module.exports = function (app) {
-    app.post('/register', [check('username').isLength({ min: 5 }), check('password').isLength({ min: 6 }),
+    app.post('/api/register', [check('username').isLength({ min: 5 }), check('password').isLength({ min: 6 }),
     check('email').isEmail()], async function (req, res) {
 
         const errors = validationResult(req)
@@ -39,7 +39,7 @@ module.exports = function (app) {
     })
 
 
-    app.post('/login', [check('password').isLength({ min: 6 })], function (req, res) {
+    app.post('/api/login', [check('password').isLength({ min: 6 })], function (req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: errors.array() })
