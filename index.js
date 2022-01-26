@@ -142,7 +142,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 require('./routes/test.js')(app)
 require('./routes/auth.js')(app)
 
-server.listen(3005)
+server.listen(5000)
 
 // Change the 404 message modifing the middleware 
 app.use(function (req, res, next) {
