@@ -1,0 +1,442 @@
+:root {
+    /* --clr-primary: hsl(317 100% 54%);
+    --clr-primary-background: hsl(323 21% 16%); */
+    --clr-white:  #C20114;
+    --clr-primary: #FF3E41;
+    --clr-primary-background: #0c0303;
+    --clr-secondary: #FFFB40;
+    --clr-secondary-background: #FF3E41;
+    --clr-success: #40FF73;
+    --clr-succees-background: #0c0303;
+    --spacing-tiny: 0.125rem;
+    --spacing-small: 0.5rem;
+    --spacing-medium: 1rem;
+    --spacing-large: 2rem;
+    --spacing-huge: 4rem;
+    --time-small:1s;
+
+}
+
+*{
+    font-family: "Barlow Semi Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--clr-primary-background);
+    color: var(--clr-primary);
+    margin: 0;
+    font-size:1rem;
+}
+
+/* This will work on Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--clr-primary-background) var(--clr-primary-background);;
+  }
+  
+
+*::-webkit-scrollbar {
+    width: 1em;
+}
+
+*::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px var(--clr-primary-background);
+
+}
+
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(--clr-primary-background);
+    outline: none;
+    
+}
+
+button[class^="button"] {
+    padding: var(--spacing-medium);
+    border-radius: var(--spacing-small);
+    font-size: 1rem;
+    font-weight: bolder;
+    cursor: pointer;
+    border: solid;
+    border-width: var(--spacing-tiny);
+    outline: none;
+}
+
+.buttonPrimary {
+    background: var(--clr-primary-background);
+    color: var(--clr-primary);
+    transition: background-color 0.5s, color 0.5s;
+}
+
+.buttonPrimary:hover,
+.buttonPrimary:focus {
+    background: var(--clr-primary);
+    color: var(--clr-primary-background);
+}
+
+.buttonSecondary {
+    background: var(--clr-primary-background);
+    color: var(--clr-secondary);
+    transition: background-color 0.5s, color 0.5s;
+}
+
+.buttonSecondary:hover,
+.buttonSecondary:focus {
+    border-color: var(--clr-secondary);
+    background: var(--clr-secondary);
+    color: var(--clr-primary-background);
+}
+
+.buttonSuccess {
+    background: var(--clr-success-background);
+    color: var(--clr-success);
+    transition: background-color 0.5s, color 0.5s;
+}
+
+.buttonSuccess:hover,
+.buttonSuccess:focus {
+    border-color: var(--clr-success);
+    background: var(--clr-success);
+    color: var(--clr-primary-background);
+}
+
+.neon-button {
+    font-size: 4rem;
+    max-width: fit-content;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: inline-block;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--clr-primary);
+    border: var(--clr-primary) 0.125em solid;
+    padding: 0.25em 1em;
+    border-radius: 0.25em;
+    text-shadow: 0 0 0.125em hsl(0 0% 100% / 0.3), 0 0 0.45em currentColor;
+    box-shadow: inset 0 0 0.5em 0 var(--clr-primary), 0 0 0.5em 0 var(--clr-primary);
+    position: relative;
+    outline:none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.neon-button::before {
+    pointer-events: none;
+    content: "";
+    position: absolute;
+    background: var(--clr-primary);
+    top: 120%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: perspective(1em) rotateX(40deg) scale(1, 0.35);
+    filter: blur(1em);
+    opacity: 0.7;
+}
+
+.neon-button::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 0 2em 0.5em var(--clr-primary);
+    opacity: 0;
+    background-color: var(--clr-primary);
+    z-index: -1;
+    transition: opacity 100ms linear;
+}
+
+.neon-button:hover,
+.neon-button:focus,
+.neon-button:active {
+    color: var(--clr-primary-background);
+    background: var(--clr-primary);
+    text-shadow: none;
+    outline: none;
+}
+
+.neon-button:hover::before,
+.neon-button:focus::before,
+.neon-button:active:before {
+    opacity: 1;
+}
+
+.neon-button:hover::after,
+.neon-button:focus::after,
+.neon-button:active:after {
+    opacity: 1;
+}
+
+
+.neon-button-success {
+    font-size: 4rem;
+    max-width: fit-content;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: inline-block;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--clr-success);
+    border: var(--clr-success) 0.125em solid;
+    padding: 0.25em 1em;
+    border-radius: 0.25em;
+    text-shadow: 0 0 0.125em hsl(0 0% 100% / 0.3), 0 0 0.45em currentColor;
+    box-shadow: inset 0 0 0.5em 0 var(--clr-success), 0 0 0.5em 0 var(--clr-success);
+    position: relative;
+    outline:none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.neon-button-success::before {
+    pointer-events: none;
+    content: "";
+    position: absolute;
+    background: var(--clr-success);
+    top: 120%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: perspective(1em) rotateX(40deg) scale(1, 0.35);
+    filter: blur(1em);
+    opacity: 0.7;
+}
+
+.neon-button-success::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 0 2em 0.5em var(--clr-success);
+    opacity: 0;
+    background-color: var(--clr-success);
+    z-index: -1;
+    transition: opacity 100ms linear;
+}
+
+.neon-button-success:hover,
+.neon-button-success:focus,
+.neon-button-success:active {
+    color: var(--clr-primary-background);
+    background: var(--clr-success);
+    text-shadow: none;
+    outline: none;
+}
+
+.neon-button-success:hover::before,
+.neon-button-success:focus::before,
+.neon-button-success:active:before {
+    opacity: 1;
+}
+
+.neon-button-success:hover::after,
+.neon-button-success:focus::after,
+.neon-button-success:active:after {
+    opacity: 1;
+}
+
+
+
+
+.flexRow {
+    display: flex;
+    flex-direction: row;
+}
+
+.flexColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.flexJustifyCenter {
+    justify-content: center;
+}
+
+.flexAlignCenter {
+    align-items: center;
+}
+
+.flexJustifySpaceAround {
+    justify-content: space-around;
+}
+.flexJustifySpaceBetween {
+    justify-content: space-between;
+}
+
+*[class^="input"] {
+    border: var(--spacing-tiny) solid var(--clr-primary);
+    padding: var(--spacing-small);
+    border-radius: var(--spacing-medium);
+    box-shadow: none;
+    font-size: 1rem;
+}
+
+*[class^="input"]:focus {
+    outline: none;
+}
+
+.inputPrimary {
+    background-color: var(--clr-primary-background);
+    color: var(--clr-primary);
+}
+
+.inputSecondary {
+    background-color: var(--clr-primary-background);
+    color: var(--clr-secondary);
+    border-color: var(--clr-secondary);
+}
+
+.inputSuccess {
+    background-color: var(--clr-success-background);
+    color: var(--clr-success);
+    border-color: var(--clr-success);
+}
+
+*[class^="textArea"] {
+    background-color: var(--clr-primary);
+    color: var(--clr-primary-background);
+    font-size: 1rem;
+    border-radius: var(--spacing-small);
+    padding: var(--spacing-medium);
+    font-weight: bolder;
+    resize: none;
+    outline: none;
+}
+
+.textAreaPrimary {
+    background-color: var(--clr-primary);
+    color: var(--clr-primary-background);
+}
+
+.textAreaSecondary {
+    background-color: var(--clr-secondary);
+    color: var(--clr-primary-background);
+}
+
+.textAreaSuccess{
+    background-color: var(--clr-success-background);
+    color: var(--clr-success);
+}
+
+
+.textAreaSuccess::-webkit-scrollbar {
+    width: 1em;
+}
+
+.textAreaSuccess::-webkit-scrollbar-track {
+    /* -webkit-box-shadow: inset 0 0 6px var(--clr-primary-background); */
+    background-color:var(--clr-success-background);
+}
+
+
+.textAreaSuccess::-webkit-scrollbar-thumb {
+    background-color: var(--clr-success);
+    outline: none;
+}
+
+
+.textAreaSecondary::-webkit-scrollbar {
+    width: 1em;
+}
+
+.textAreaSecondary::-webkit-scrollbar-track {
+    /* -webkit-box-shadow: inset 0 0 6px var(--clr-primary-background); */
+    background-color:var(--clr-primary-background);
+}
+
+
+.textAreaSecondary::-webkit-scrollbar-thumb {
+    background-color: var(--clr-primary);
+    outline: none;
+}
+
+
+
+.textAreaPrimary::-webkit-scrollbar {
+    width: 1em;
+}
+
+.textAreaPrimary::-webkit-scrollbar-track {
+    /* -webkit-box-shadow: inset 0 0 6px var(--clr-primary-background); */
+    background-color:var(--clr-primary-background);
+}
+
+
+.textAreaPrimary::-webkit-scrollbar-thumb {
+    background-color: var(--clr-secondary);
+    outline: none;
+}
+
+
+::selection {
+    color: var(--clr-primary-background);
+    background: var(--clr-white);
+}
+
+
+.colorPrimary {
+    color: var(--clr-primary);
+}
+
+.colorSecondary {
+    color: var(--clr-secondary);
+}
+
+.colorSuccess {
+    color: var(--clr-success);
+}
+
+p {
+    padding: var(--spacing-large);
+    border-color: var(--clr-primary);
+    border-radius: var(--spacing-small);
+    border-width:var(--spacing-tiny);
+    border:solid;
+    line-height: 2;
+}
+
+.borderPrimary{
+    border-color: var(--clr-primary);
+    border-radius: var(--spacing-small);
+    border-width:var(--spacing-tiny);
+    border:solid;
+}
+
+.borderSuccess{
+    border-color: var(--clr-success) !important;
+    border-radius: var(--spacing-small);
+    border-width:var(--spacing-tiny);
+    border:solid;
+}
+.flexAlignSelfEnd {
+    align-self:flex-end;
+}
