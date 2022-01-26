@@ -40,7 +40,7 @@ const upload = multer({
 
 module.exports = function (app) {
 
-    app.post('/test', validateUser, async function (req, res) {
+    app.get('/test', async function (req, res) {
         return res.status(status.OK).json({ bla: 'blabla' })
     }),
 
