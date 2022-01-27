@@ -142,7 +142,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 require('./routes/test.js')(app)
 require('./routes/auth.js')(app)
-app.use('/', express.static(path.join(__dirname, 'public')))
+// app.use('/', express.static(path.join(__dirname, 'public')))
 
 
 server.listen(8080)
