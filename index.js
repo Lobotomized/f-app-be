@@ -94,7 +94,9 @@ io.on("connection", (socket) => {
       const message = new Message({
         author: socket.handshake.auth.userId,
         content: receivable.message,
-        room: mongoose.Types.ObjectId(receivable.roomId)
+        room: mongoose.Types.ObjectId(receivable.roomId),
+        photo:receivable.photo || null,
+        photoUrl:receivable.photoUrl || null
       });
       message.save();
 
