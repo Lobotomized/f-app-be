@@ -45,10 +45,9 @@ module.exports = function (app) {
     }),
 
         app.post('/api/write', validateUser, async function (req, res) {
-            const storiesCount = await Story.find({postedOn:{$gt:new Date(Date.now() - 24*60*60 * 1000)}, user:req.user._id}).countDocuments();
-            console.log(storiesCount, '   wtf')
-            if(storiesCount > 6){
-                return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Публикувал си твърде много фантазии днес. Пробвай утре."})
+            const storiesCount = await Story.find({ postedOn: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, user: req.user._id }).countDocuments();
+            if (storiesCount > 6) {
+                return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Публикувал си твърде много фантазии днес. Пробвай утре." })
             }
             const story = new Story();
             story.content = req.body.content;
@@ -94,6 +93,15 @@ module.exports = function (app) {
             try {
                 const rooms = await Room.find({ $or: [{ $and: [{ author: req.user._id }, { leftByAuthor: false }] }, { $and: [{ responder: req.user._id }, { leftByResponder: false }] }] }, { name: 1, seenByAuthor: 1, seenByResponder: 1 }).sort({ postedOn: -1 })
                 return res.status(status.OK).json(rooms)
+            }
+            catch (err) {
+                return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
+            }
+        }),
+        app.get('/api/getMe', validateUser, async function (req, res) {
+            try {
+                const me = await User.find({_id:req.user._id})
+                return res.status(status.OK).json({me:me})
             }
             catch (err) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
@@ -246,7 +254,7 @@ module.exports = function (app) {
                         return res.status(status.UNAUTHORIZED).json({ message: 'No such User' });
                     }
                     User.findOne({ _id: story.user }, (err, responder) => {
-                        Room.findOne({ fromPost: req.body.postId, author: conversationStarter }, async (err, oldRoom) => {
+                        Room.findOne({ fromPost: req.body.postId, author: conversationStarter._id }, async (err, oldRoom) => {
                             if (!oldRoom) {
                                 const newRoom = new Room({
                                     roomType: "fromPost",
@@ -257,8 +265,14 @@ module.exports = function (app) {
                                 })
                                 conversationStarter.authorRooms.push(newRoom._id);
                                 responder.responderRooms.push(newRoom._id);
-                                conversationStarter.save();
-                                responder.save();
+                                try {
+                                    await conversationStarter.save();
+                                    await responder.save();
+                                }
+                                catch (err) {
+                                    return res.status(status.UNPROCESSABLE_ENTITY).json(err)
+                                }
+
 
                                 await newRoom.save();
                                 return res.status(status.OK).json({ message: 'Success' })
