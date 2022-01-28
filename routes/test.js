@@ -45,10 +45,18 @@ module.exports = function (app) {
     }),
 
         app.post('/api/write', validateUser, async function (req, res) {
+            const storiesCount = await Story.find({postedOn:{$gt:new Date(Date.now() - 24*60*60 * 1000)}, user:req.user._id}).countDocuments();
+            console.log(storiesCount, '   wtf')
+            if(storiesCount > 6){
+                return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Публикувал си твърде много фантазии днес. Пробвай утре."})
+            }
             const story = new Story();
             story.content = req.body.content;
             if (story.content.length > 1000) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Твърде много символи" })
+            }
+            if (story.content.length === 50) {
+                return res.status(status.UNPROCESSABLE_ENTITY).json({ message: "Не достатъчно символи" })
             }
             story.user = req.user._id
             try {
@@ -63,7 +71,7 @@ module.exports = function (app) {
 
         app.get('/api/fantasies', validateUser, async function (req, res) {
             try {
-                const stories = await Story.find({ user: { $ne: req.user._id }, hideFromUser:{$nin:[req.user._id]} }, { content: 1, user: 1 }).sort({ postedOn: -1 }).limit(5).skip(parseInt(req.query.skip) || 0)
+                const stories = await Story.find({ user: { $ne: req.user._id }, hideFromUser: { $nin: [req.user._id] } }, { content: 1, user: 1 }).sort({ postedOn: -1 }).limit(5).skip(parseInt(req.query.skip) || 0)
                 return res.status(status.OK).json(stories)
 
             }
@@ -195,6 +203,23 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ err: err.message })
             }
         }),
+        app.put('/api/setAvatar', validateUser, async function (req, res) {
+            const user = await User.findOne({ _id: req.user._id });
+            const photo = await Photo.findOne({ _id: req.body.photoId, author: req.user._id });
+
+            if (!photo) {
+                return res.status(status.UNAUTHORIZED).json({ message: "Нямате достъп до такава снимка" });
+            }
+
+            user.avatar = photo._id;
+
+            try {
+                await user.save();
+            }
+            catch (err) {
+                return res.status(status.UNPROCESSABLE_ENTITY).json(err);
+            }
+        }),
         app.delete('/api/photo/:photoId', validateUser, async function (req, res) {
             try {
                 await Photo.deleteOne({ _id: req.params.photoId, author: req.user._id });
@@ -247,4 +272,4 @@ module.exports = function (app) {
             })
         })
 
-    }
+}
