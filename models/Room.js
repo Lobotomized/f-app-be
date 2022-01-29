@@ -12,7 +12,9 @@ const roomSchema = new mongoose.Schema({
     seenByResponder: { type: Boolean, default: false },
     leftByResponder: {type:Boolean, default: false},
     leftByAuthor: {type:Boolean, default: false},
-    name: { type: String, required: true }
+    name: { type: String, required: true },
+    profileShareByResponder: {type:Boolean, default: false},
+    profileShareByAuthor: {type:Boolean, default: false}
 
 });
 const Room = mongoose.model('Room', roomSchema);

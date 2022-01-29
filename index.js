@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
   })
 
   socket.on("joinFromPost", (postId) => {
-    console.log('vliza tuk ' , postId)
+    console.log('vliza tuk ', postId)
     socket.join(postId);
   })
 
@@ -79,7 +79,7 @@ io.on("connection", (socket) => {
               responder.save();
 
               await newRoom.save();
-              
+
             }
           })
         })
@@ -89,21 +89,23 @@ io.on("connection", (socket) => {
 
   socket.on("message", async (receivable) => {
     socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId });
-
+    const room = await Room.findOne({ _id: receivable.roomId });
+    if(receivable?.message?.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)){
+      return;
+    }
     if (receivable.message) {
       const message = new Message({
         author: socket.handshake.auth.userId,
         content: receivable.message,
         room: mongoose.Types.ObjectId(receivable.roomId),
-        photo:receivable.photo || null,
-        photoUrl:receivable.photoUrl || null
+        photo: receivable.photo || null,
+        photoUrl: receivable.photoUrl || null
       });
       message.save();
 
     }
 
 
-    const room = await Room.findOne({ _id: receivable.roomId });
     if (socket.handshake.auth.userId === String(room.responder)) {
       room.seenByAuthor = false;
     }
