@@ -4,7 +4,10 @@ const jwt = require('jsonwebtoken');
 const validateUser = (req, res, next) => {
     const bearerHeader =
         req.body.token || req.query.token || req.headers["x-access-token"] || req.headers["authorization"];
-    const token = bearerHeader?.split(' ')[1];
+    let token = undefined;
+    if (bearerHeader) {
+        token = bearerHeader?.split(' ')[1];
+    }
     if (!token) {
         return res.status(403).send("A token is required for authentication");
     }
