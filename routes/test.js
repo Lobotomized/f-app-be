@@ -315,10 +315,10 @@ module.exports = function (app) {
 
 
                                 await newRoom.save();
-                                return res.status(status.OK).json({ message: 'Success' })
+                                return res.status(status.OK).json(newRoom)
                             }
                             else {
-                                return res.status(status.OK).json({ message: 'Success' });
+                                return res.status(status.OK).json(oldRoom);
                             }
                         })
                     })

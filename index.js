@@ -34,7 +34,6 @@ const io = require("socket.io")(server, {
 // });
 
 
-
 io.on("connection", (socket) => {
   //Join all rooms that the user has
   User.findOne({ _id: mongoose.Types.ObjectId(socket.handshake.auth.userId) }, (err, user) => {
@@ -47,47 +46,22 @@ io.on("connection", (socket) => {
     })
   })
 
-  socket.on("joinFromPost", (postId) => {
-    console.log('vliza tuk ', postId)
-    socket.join(postId);
-  })
-
-  socket.on("createRoomFromPost", (postId) => {
-    socket.join(postId);
-
-    Story.findOne({ _id: postId }, (err, story) => {
-      if (!story) {
-        return;
-      }
-      User.findOne({ _id: mongoose.Types.ObjectId(socket.handshake.auth.userId) }, (err, conversationStarter) => {
-        if (!conversationStarter) {
-          return;
-        }
-        User.findOne({ _id: story.user }, (err, responder) => {
-          Room.findOne({ fromPost: postId, author: conversationStarter }, async (err, oldRoom) => {
-            if (!oldRoom) {
-              const newRoom = new Room({
-                roomType: "fromPost",
-                fromPost: postId,
-                author: mongoose.Types.ObjectId(conversationStarter._id),
-                responder: story.user,
-                name: story.content.split(' ').slice(0, 3).join(' ')
-              })
-              conversationStarter.authorRooms.push(newRoom._id);
-              responder.responderRooms.push(newRoom._id);
-              conversationStarter.save();
-              responder.save();
-
-              await newRoom.save();
-
-            }
-          })
-        })
-      })
+  socket.on("joinFromPost", async (receivable) => {
+    const story = await Story.findOne({_id:receivable.postId});
+    const socks = await io.fetchSockets();
+    const authSock = socks.find((so) => {
+      return so.handshake.auth.userId + '' === story.user + '';
     })
+    const room = await Room.findOne({fromPost:receivable.postId, _id:receivable.chatId});
+    if(authSock){
+      authSock.join(String(room._id));
+      socket.to(String(room._id)).emit('message', { message: 'Convo start', user: socket.handshake.auth.userId, roomId: receivable.roomId });
+    }
+    socket.join(String(room._id));
   })
 
   socket.on("message", async (receivable) => {
+
     socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId });
     const room = await Room.findOne({ _id: receivable.roomId });
     if(receivable?.message?.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)){
@@ -105,7 +79,7 @@ io.on("connection", (socket) => {
 
     }
 
-
+    
     if (socket.handshake.auth.userId === String(room.responder)) {
       room.seenByAuthor = false;
     }
