@@ -64,7 +64,10 @@ io.on("connection", (socket) => {
 
     socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId });
     const room = await Room.findOne({ _id: receivable.roomId });
-    if(receivable?.message?.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)){
+    if(!receivable){
+      return ;
+    }
+    if(receivable.message?.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)){
       return;
     }
     if (receivable.message) {
