@@ -91,7 +91,9 @@ module.exports = function (app) {
 
         app.get('/api/loadRooms', validateUser, async function (req, res) {
             try {
-                const rooms = await Room.find({ $or: [{ $and: [{ author: req.user._id }, { leftByAuthor: false }] }, { $and: [{ responder: req.user._id }, { leftByResponder: false }] }] }, { name: 1, seenByAuthor: 1, seenByResponder: 1, profileShareByAuthor: 1, profileShareByResponder: 1 }).sort({ postedOn: -1 })
+                const rooms = await Room.find({ $or: [{ $and: [{ author: req.user._id }, { leftByAuthor: false }] }, { $and: [{ responder: req.user._id }, { leftByResponder: false }] }] },
+                    { name: 1, seenByAuthor: 1, seenByResponder: 1, profileShareByAuthor: 1, profileShareByResponder: 1 }).populate({ path: 'responder', select: 'avatar -_id', populate: {path:'avatar'} })
+                    .populate({ path: 'author', select: 'avatar -_id', populate: {path:'avatar'} }).sort({ postedOn: -1 })
                 return res.status(status.OK).json(rooms)
             }
             catch (err) {
@@ -140,19 +142,23 @@ module.exports = function (app) {
                 return res.status(status.UNPROCESSABLE_ENTITY).json({ message: err.message })
             }
         }),
-        app.get('/api/roomSecretInfo', validateUser, async function (req, res) {
+        app.get('/api/roomSecretInfo/:roomId', validateUser, async function (req, res) {
             try {
-                const room = await Room.findOne({ _id: req.body.roomId });
-                if (room.responder === req.user._id && room.profileShareByAuthor) {
-                    const otherGuyData = User.findOne({ _id: room.author }, { username: 1 });
+                const room = await Room.findOne({ _id: req.params.roomId });
+                if (room.responder + '' === req.user._id + '' && room.profileShareByAuthor) {
+                    const otherGuyData = await User.findOne({ _id: room.author }, { username: 1, avatar: 1 });
                     return res.status(status.OK).json(otherGuyData);
                 }
-                else if (room.author === req.user._id && room.profileShareByResponder) {
-                    const otherGuyData = User.findOne({ _id: room.responder }, { username: 1 });
+                else if (room.author + '' === req.user._id + '' && room.profileShareByResponder) {
+                    const otherGuyData = await User.findOne({ _id: room.responder }, { username: 1, avatar: 1 });
                     return res.status(status.OK).json(otherGuyData);
+                }
+                else {
+                    return res.status(status.UNAUTHORIZED).json({ message: "Нещо не е наред..." })
                 }
             }
             catch (err) {
+                console.log(err)
                 return res.status(status.UNPROCESSABLE_ENTITY).json(err);
             }
         }),
@@ -185,7 +191,7 @@ module.exports = function (app) {
                     await room.save();
                     return res.status(status.OK).json({ message: "Успешно даде права" })
                 }
-                else if (room.author+'' === req.user._id+'') {
+                else if (room.author + '' === req.user._id + '') {
                     room.profileShareByAuthor = true;
                     await room.save();
                     return res.status(status.OK).json({ message: "Успешно даде права" })
