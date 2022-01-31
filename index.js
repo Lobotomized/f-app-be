@@ -47,24 +47,23 @@ io.on("connection", (socket) => {
   })
 
   socket.on("joinFromPost", async (receivable) => {
-    const story = await Story.findOne({_id:receivable.postId});
+    const story = await Story.findOne({ _id: receivable.postId });
     const socks = await io.fetchSockets();
     const authSock = socks.find((so) => {
       return so.handshake.auth.userId + '' === story.user + '';
     })
-    const room = await Room.findOne({fromPost:receivable.postId, _id:receivable.chatId});
-    if(authSock){
+    const room = await Room.findOne({ fromPost: receivable.postId, _id: receivable.chatId });
+    if (authSock) {
       authSock.join(String(room._id));
-      socket.to(String(room._id)).emit('message', { message: 'Convo start', user: socket.handshake.auth.userId, roomId: receivable.roomId });
+      socket.to(String(room._id)).emit('message', { message: 'Convo start', user: socket.handshake.auth.userId, roomId: receivable.roomId, photo: receivable.photo, imageUrl: receivable.photoUrl });
     }
     socket.join(String(room._id));
   })
 
   socket.on("message", async (receivable) => {
-
-    socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId });
+    socket.to(receivable.roomId).emit('message', { message: receivable.message, user: socket.handshake.auth.userId, roomId: receivable.roomId, photo: receivable.photo, imageUrl: receivable.photoUrl });
     const room = await Room.findOne({ _id: receivable.roomId });
-    if(receivable && receivable.message && receivable.message.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)){
+    if (receivable && receivable.message && receivable.message.photo && (!room.profileShareByResponder || !room.profileShareByAuthor)) {
       return;
     }
     if (receivable.message) {
@@ -79,7 +78,7 @@ io.on("connection", (socket) => {
 
     }
 
-    
+
     if (socket.handshake.auth.userId === String(room.responder)) {
       room.seenByAuthor = false;
     }
