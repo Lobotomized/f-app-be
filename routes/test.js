@@ -189,17 +189,18 @@ module.exports = function (app) {
                 if (room.responder + '' === req.user._id + '') {
                     room.profileShareByResponder = true;
                     await room.save();
-                    return res.status(status.OK).json({ message: "Успешно даде права" })
+                    return res.status(status.OK).json({ room:room })
                 }
                 else if (room.author + '' === req.user._id + '') {
                     room.profileShareByAuthor = true;
                     await room.save();
-                    return res.status(status.OK).json({ message: "Успешно даде права" })
+                    return res.status(status.OK).json({room:room})
                 }
 
                 return res.status(status.UNAUTHORIZED).json({ message: "Да не се опитваш да направиш нещо палаво?" })
             }
             catch (err) {
+                console.log(err)
                 return res.status(status.UNPROCESSABLE_ENTITY).json(err);
             }
         }),
