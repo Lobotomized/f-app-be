@@ -22,11 +22,23 @@ const s3 = new aws.S3({
     secretAccessKey: "v5VusNPSBOelmart5ITfXiG0VXIEj7JT5BLZWNR/aJ0",
 });
 
-
-
+const fileFilter = function(req, file, cb) {
+    // supported image file mimetypes
+    const allowedMimes = ['image/jpeg', 'image/pjpeg', 'image/png', 'image/gif'];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+    // allow supported image files
+    cb(null, true);
+    } else {
+    // throw error for invalid files
+    cb(new Error('Invalid file type. Only jpg, png and gif image files are allowed.'));
+    }
+};
 
 // Change bucket property to your Space name
 const upload = multer({
+    limits:{fileSize:1024*1024},
+    fileFilter:fileFilter,
     storage: multerS3({
         limits: { fieldSize: 25 * 1024 * 1024 },
         s3: s3,
