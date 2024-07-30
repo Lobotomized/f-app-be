@@ -17,27 +17,32 @@ module.exports = function (app) {
         if (!errors.isEmpty()) {
             return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: errors.array() })
         }
+
+        const oldUser = await User.findOne({email:req.body.email});
+
+        if(oldUser){
+            return res.status(status.CONFLICT).json({errors:{message:"Имейлът вече е използван"}})
+        }
+
         const user = new User();
         user.email = req.body.email;
         user.username = req.body.username;
 
-        var hash = bcrypt.hashSync(req.body.password, salt);
+
+        const hash = bcrypt.hashSync(req.body.password, salt);
         user.password = hash;
 
         try {
             const result = await user.save()
-
             return res.status(status.OK).json(result)
 
         }
         catch (err) {
-            if (err) {
-                return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: err })
-            }
-
+            return res.status(status.UNPROCESSABLE_ENTITY).json({ errors: err })
         }
     })
 
+    
 
     app.post('/api/login', [check('password').isLength({ min: 6 })], function (req, res) {
         const errors = validationResult(req)
