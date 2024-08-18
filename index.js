@@ -85,6 +85,7 @@ io.on("connection", (socket) => {
     else if (socket.handshake.auth.userId === String(room.author)) {
       room.seenByResponder = false;
     }
+    room.postedOn = new Date();
     room.save();
   })
 })
